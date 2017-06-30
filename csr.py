@@ -38,7 +38,7 @@ class MyCSR():
             self.data[index] = data
     
     def _element_generator(self):
-        for row in range(self.nrows):
+        for row in range(self.shape[0]):
             for index in range(*self.row_ptrs[row:row+2]):
                 yield row, self.col_indices[index], self.data[index]
     
@@ -63,14 +63,14 @@ class MyCSR():
         total_nonzeros_found = 0
         for l_row in range(l_nrows):
             for l_col, l_data in self._row_element_generator(l_row):
-                for r_col, r_data in self._row_element_generator(l_col):
+                for r_col, r_data in other._row_element_generator(l_col):
                     if not col_nonzero_found[r_col]:
                         col_nonzero_found[r_col] = True
                         total_nonzeros_found += 1
             
             # Clear the flags in O(row nnzs) time
             for l_col, l_data in self._row_element_generator(l_row):
-                for r_col, r_data in self._row_element_generator(l_col):
+                for r_col, r_data in other._row_element_generator(l_col):
                     col_nonzero_found[r_col] = False
                     
         ### Allocate the new sparse matrix ###
@@ -82,12 +82,12 @@ class MyCSR():
         for l_row in range(l_nrows):
             # Calculation Pass
             for l_col, l_data in self._row_element_generator(l_row):
-                for r_col, r_data in self._row_element_generator(l_col):
+                for r_col, r_data in other._row_element_generator(l_col):
                     prod_row_data[r_col] += r_data * l_data
                     
                     # Record column index, if this is a new nonzero product element
                     if not col_nonzero_found[r_col]:
-                        prod.col_indices[prod_index] = rcol
+                        prod.col_indices[prod_index] = r_col
                         
                         col_nonzero_found[r_col] = True
                         prod_index += 1
@@ -98,10 +98,10 @@ class MyCSR():
             for other_prod_index in range(*prod.row_ptrs[l_row:l_row+2]):
                 # Store data
                 prod_col = prod.col_indices[other_prod_index]
-                prod.data[other_prod_index] = prod_row_data[other_prod_index]
+                prod.data[other_prod_index] = prod_row_data[prod_col]
                 # Clear row work arrays
-                prod_row_data[other_prod_index] = 0
-                col_nonzero_found[other_prod_index] = 0
+                prod_row_data[prod_col] = 0
+                col_nonzero_found[prod_col] = 0
         
         return prod
     
@@ -158,7 +158,7 @@ class MyCSR():
         return result
     
     def to_dense(self):
-        dense = scipy.zeros(shape, dtype=self.data.dtype)
+        dense = scipy.zeros(self.shape, dtype=self.data.dtype)
         for row, col, data in self._element_generator():
             dense[row,col] = data
         return dense
