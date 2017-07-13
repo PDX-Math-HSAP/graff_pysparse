@@ -36,3 +36,16 @@ sparse_print(mat_baz)
 print(mat_baz.to_dense())
 print(dmat_baz)
 assert((dmat_baz == mat_baz.to_dense()).all())
+
+dvec_foo = scipy.linspace(0,2,3)
+matdvec = mat_foo @ dvec_foo
+dmatdvec = dmat_foo @ dvec_foo
+print("matvec product")
+print(matdvec)
+print(dmatdvec)
+assert((matdvec == dmatdvec).all())
+
+print("vecmat product")
+dvecmat = dvec_foo @ mat_foo
+dvecdmat = dvec_foo @ dmat_foo
+assert((dvecmat == dvecdmat).all())
